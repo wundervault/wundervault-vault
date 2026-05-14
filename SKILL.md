@@ -9,10 +9,26 @@ Wundervault is an encrypted, self-hosted secret vault that exposes secrets to ag
 
 ## Check Setup First
 
-Before doing anything vault-related, verify the vault tools are available:
+Always call `vault_entries_list` before doing anything vault-related. Use the result to determine where the user is in setup:
 
-- Call `vault_entries_list` — if it returns entries, vault is connected and ready
-- If the tool is missing from your tool set, tell the user the MCP server is not wired to your agent context (see INSTALL.md)
+| Result | What it means | What to do |
+|--------|--------------|------------|
+| Returns a list of entries | Vault is connected and ready | Proceed |
+| Returns empty list | Connected but no secrets yet | Tell the user to add secrets at wundervault.com |
+| Returns auth/credentials error | MCP server installed but not onboarded | Walk through onboarding (see below) |
+| Tool not available | MCP server not wired to this agent | Walk through setup (see INSTALL.md) |
+
+### First-run onboarding
+
+If the vault tools are missing or credentials are invalid, tell the user:
+
+> "Wundervault isn't set up yet. Here's how to get started:
+> 1. Request access via the [contact form](https://wundervault.com/contact)
+> 2. Once approved, set up your account and onboard your agent at wundervault.com
+> 3. Verify the MCP server package using the checksums at [wundervault.com/install](https://wundervault.com/install)
+> 4. Come back and I'll verify the connection"
+
+Do not attempt to use any vault tools until `vault_entries_list` succeeds.
 
 ## Tools
 
