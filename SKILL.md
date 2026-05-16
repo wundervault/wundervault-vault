@@ -115,6 +115,29 @@ vault_rsync(
 )
 ```
 
+### `vault_http_post`
+Make an HTTPS request with vault secrets injected directly into headers — the agent never sees the secret values, only the HTTP response.
+
+Each credential is fetched from the vault, interpolated into the format string using `{secret}`, and added as an HTTP header. Plaintext credentials are zeroed after use and never included in the response.
+
+**HTTPS is enforced** — `http://` URLs are rejected before any network activity.
+
+```
+vault_http_post(
+  url: "https://api.example.com/endpoint",
+  body: { key: "value" },
+  credentials: [
+    { entry_id: "abc123", header: "Authorization", format: "Bearer {secret}" },
+    { entry_id: "def456", header: "X-Api-Hmac",    format: "{secret}" }
+  ],
+  purpose: "post data to example API"
+)
+→ ✅ vault_http_post 200
+  {"ok": true}
+```
+
+Use this instead of `vault_entry_get` + manual HTTP — credentials never touch the agent's context.
+
 ### `vault_entry_forget`
 Discard a vault entry reference from context. Does not delete the vault entry.
 
@@ -150,6 +173,12 @@ Note: Tier 2 entries require the user to enable access from the wundervault.com 
 2. vault_rsync(ssh_key_entry_id: "...", local_path: "./dist/", remote_user: "opc", remote_host: "prod.example.com", remote_path: "/var/www/html")
 ```
 
+**Make an authenticated HTTP request without exposing credentials:**
+```
+1. vault_entries_list() → find entry IDs for each credential
+2. vault_http_post(url: "https://...", body: {...}, credentials: [{entry_id: "...", header: "Authorization", format: "Bearer {secret}"}], purpose: "...")
+```
+
 ## Multi-Agent Setup
 
 Wundervault is designed for multi-agent environments. Each agent gets its own scoped identity and token — they are fully isolated from each other at the daemon level.
@@ -167,7 +196,7 @@ This makes Wundervault suitable for setups where multiple specialized agents (a 
 - Secrets are end-to-end encrypted; plaintext is never returned to the agent
 - The onboarding script verifies its own ed25519 signature on startup and exits if the check fails. Pipe mode (`curl ... | python3`) is hard-blocked — the script detects it and refuses to run. Pinned version, SHA-256 checksum, and public key are at [wundervault.com/install](https://wundervault.com/install).
 - Agents never hold credentials directly — only a scoped token is stored locally. The local daemon manages the actual credentials and exposes them only through its controlled interface, enforcing tier checks and audit logging on every request. Compromise of an agent token does not grant direct access to vault credentials.
-- `vault_exec` and `vault_rsync` are the correct tools for using secrets — not `vault_entry_get`
+- `vault_exec`, `vault_rsync`, and `vault_http_post` are the correct tools for using secrets — not `vault_entry_get`
 - Tier 2 entries are configured by the vault owner; agents cannot escalate a Tier 1 entry
 - Tier 2 access is enabled server-side by the user via the wundervault.com dashboard
 - The `inject_as` override lets you specify which env var name receives the secret if the vault entry has no exec_config set
