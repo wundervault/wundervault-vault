@@ -63,7 +63,7 @@ vault_exec(entry_id: "abc123", purpose: "publish package", command: "npm publish
 - **Tier 1** (standard): runs immediately
 - **Tier 2** (restricted): Tier 2 access is controlled server-side — the user enables it from the wundervault.com dashboard
 
-Shell escape sequences (`$()`, backticks, `bash -c`, `eval`) are hard-blocked before the secret is decrypted.
+Shell escape sequences (`$()`, backticks, `bash -c`, `eval`) and file-writing redirects (`>`, `>>`, `tee`) are hard-blocked before the secret is decrypted. To put a secret into a file, use `vault_entry_inject_env` — do not redirect it with the shell. (These blocks are a guardrail, not a sandbox; the real protection is that plaintext is never returned to you.)
 
 **Remote execution via SSH:** Pass `remote_host` to run the command on a remote machine. The secret is injected inside the remote shell via SSH stdin — no `AcceptEnv`/`SendEnv` config required on the remote host. Use `ssh_key_entry_id` to load the SSH key from the vault itself.
 
@@ -74,6 +74,16 @@ vault_exec(
   command: "curl -s -u \"admin:$DB_PASSWORD\" http://localhost:9000/api/subscribers",
   inject_as: { env_key: "DB_PASSWORD" },
   remote_host: { host: "192.168.1.50", user: "opc", ssh_key_entry_id: "ssh-key-entry-id" }
+)
+```
+
+**Remote command with only an SSH key (no secret injected):** `entry_id` is optional. To run a command on a remote host using just a vaulted SSH key — without injecting any secret as an env var — omit `entry_id` and pass `remote_host.ssh_key_entry_id`.
+
+```
+vault_exec(
+  purpose: "restart the service on prod",
+  command: "sudo systemctl restart wundervault",
+  remote_host: { host: "prod.example.com", user: "opc", ssh_key_entry_id: "ssh-key-entry-id" }
 )
 ```
 
