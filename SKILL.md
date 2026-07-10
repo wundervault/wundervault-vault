@@ -176,6 +176,7 @@ This makes Wundervault suitable for setups where multiple specialized agents (a 
 ## Security Notes
 
 - Secrets are end-to-end encrypted; plaintext is never returned to the agent
+- The zero-knowledge claim is independently verifiable — no source access needed: [wundervault.com/verify](https://wundervault.com/verify) (browser DevTools walkthrough or mitmproxy canary test, with a published transcript)
 - The onboarding script verifies its own ed25519 signature on startup and exits if the check fails. Pipe mode (`curl ... | python3`) is hard-blocked — the script detects it and refuses to run. Pinned version, SHA-256 checksum, and public key are at [wundervault.com/install](https://wundervault.com/install).
 - Agents never hold credentials directly — only a scoped token is stored locally. The local daemon manages the actual credentials and exposes them only through its controlled interface, enforcing tier checks and audit logging on every request. Compromise of an agent token does not grant direct access to vault credentials.
 - `vault_exec` and `vault_rsync` are the correct tools for using secrets — not `vault_entry_get`
