@@ -61,7 +61,7 @@ vault_exec(entry_id: "abc123", purpose: "publish package", command: "npm publish
 
 **Two tiers:**
 - **Tier 1** (standard): runs immediately
-- **Tier 2** (restricted): Tier 2 access is controlled server-side — the user enables it from the wundervault.com dashboard
+- **Tier 2** (restricted): the call is denied until the owner approves. The denial carries a request id and the owner is emailed automatically; approval is scoped to this agent + secret (single-use, or a 15/60-minute window). Retry after approval — do not treat the denial as an error.
 
 Shell escape sequences (`$()`, backticks, `bash -c`, `eval`) and file-writing redirects (`>`, `>>`, `tee`) are hard-blocked before the secret is decrypted. To put a secret into a file, use `vault_entry_inject_env` — do not redirect it with the shell. (These blocks are a guardrail, not a sandbox; the real protection is that plaintext is never returned to you.)
 
@@ -146,7 +146,15 @@ vault_entry_forget(entry_id: "abc123")
 1. vault_entries_list() → find entry ID
 2. vault_exec(entry_id: "abc123", purpose: "...", command: "...")
 ```
-Note: Tier 2 entries require the user to enable access from the wundervault.com dashboard before use.
+Note: Tier 2 calls are denied until the owner approves from the wundervault.com dashboard — the owner is emailed automatically and the denial includes a request id. Retry after approval.
+
+**Sign an x402 payment with a vaulted wallet key (you never see the key):**
+```
+1. vault_entries_list() → find the wallet key entry (keep wallet keys at Tier 2)
+2. vault_exec(entry_id: "...", purpose: "sign x402 payment for <api>", command: "node sign-payment.mjs", inject_as: { env_key: "X402_WALLET_KEY" })
+3. Denied with a request id? The owner has been emailed — retry after they approve.
+```
+The signing script reads the key from its environment and prints only the signed `X-PAYMENT` header. A verified end-to-end run (402 → approval → signed → settled on Base Sepolia) is at [wundervault.com/agent-wallets](https://wundervault.com/agent-wallets).
 
 **Write a secret to a config file:**
 ```
