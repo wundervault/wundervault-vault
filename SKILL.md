@@ -52,9 +52,9 @@ vault_call(
   set the header that carries the secret.
 - `headers` may carry your own headers (user agent, API version). A string `body` is sent as
   written: set its content type in `headers`.
-- Keys marked "stamped" (AWS, exchanges) never travel: add `request.stamp` describing how the
-  service signs requests, and the broker signs each one. The owner approves each new recipe
-  once.
+- Keys marked "stamped" (AWS, X, exchanges) never travel: add `request.stamp` describing how the
+  service signs requests, and the broker signs each one. For X and other OAuth 1.0a services it
+  is just `{"builtin": "oauth1"}`. The owner approves each new recipe once.
 - HTTPS only, real certificate checks, no redirects followed. Private network addresses are
   refused unless the owner allowed one for that secret.
 - Or run an operation the owner defined: `operation_id` + `args` instead of `request`.

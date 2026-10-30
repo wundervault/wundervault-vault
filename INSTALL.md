@@ -24,9 +24,14 @@ The installer downloads nothing and is short enough to read first.
 
 ## 3. Pair it with your account
 
+Use the full paths the installer printed in its last step. They usually are:
+
 ```bash
-sudo wundervault-agent --pair
+sudo /usr/bin/node /usr/bin/wundervault-agent --pair              # Linux
+sudo /usr/local/bin/node /usr/local/bin/wundervault-agent --pair  # macOS
 ```
+
+Full paths, because with `sudo` a bare name could be found in a folder your agents can write.
 
 Check that the fingerprint it shows matches the one in your vault, then confirm there.
 
